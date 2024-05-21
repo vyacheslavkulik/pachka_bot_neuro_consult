@@ -1,13 +1,18 @@
+import os
 from fastapi import FastAPI, Request
 import uvicorn
 import json
 import requests
 from pachka import Pachka
 from chunk import Chunk
+from dotenv import load_dotenv
+
+# получим переменные окружения из .env
+load_dotenv()
 
 app = FastAPI()
 pachkaDef = Pachka()
-chunk = Chunk(path_to_base="https://docs.google.com/document/d/1tNhcqRY_86EHDcrbyJJ2xisl9FZrte7Zu9RZwIea33M")
+chunk = Chunk(path_to_base=os.environ.get("PATH_TO_BASE"))
 
 @app.post("/api/webhook")
 async def webhook(request: Request):
