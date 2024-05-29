@@ -4,7 +4,7 @@ import uvicorn
 import json
 import requests
 from pachka import Pachka
-from chunk import Chunk
+from chunks import Chunk
 from dotenv import load_dotenv
 
 # получим переменные окружения из .env
@@ -12,9 +12,9 @@ load_dotenv()
 
 app = FastAPI()
 pachkaDef = Pachka()
-chunk = Chunk(path_to_base=os.environ.get("PATH_TO_BASE"))
+chunk = Chunk(path_to_base=os.environ.get("PATH_TO_BASE"), ch_size=1024)
 
-@app.post("/api/webhook")
+@app.post("/api/v1/pachka/webhook")
 async def webhook(request: Request):
     payload = await request.json()
 
