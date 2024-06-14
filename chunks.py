@@ -54,7 +54,7 @@ class Chunk():
         ]
 
         # создаем индексную базу
-        embeddings = OpenAIEmbeddings()
+        embeddings = OpenAIEmbeddings(model='text-embedding-3-large')
         self.db = FAISS.from_documents(source_chunks, embeddings)
     
 
@@ -70,16 +70,22 @@ class Chunk():
         """        
         # задаем system
 
-        system = "Ты консультант в компании который следит за базой знаний компании, ответь на вопрос клиента на основе документа с информацией. Не придумывай ничего от себя, отвечай максимально по документу. Не упоминай Документ с информацией для ответа клиенту. Клиент ничего не должен знать про Документ с информацией для ответа клиенту. Если ответа на вопрос нет в документе, отвечай что не можешь помочь с этим вопросом"
+        system = """
+        Ты консультант в компании который следит за базой знаний компании, ответь на вопрос сотрудника на основе документа с информацией. 
+        Не придумывай ничего от себя, отвечай максимально по документу. Не упоминай Документ с информацией 
+        для ответа сотруднику. Сотрудник ничего не должен знать про Документ с информацией для ответа сотруднику. 
+        Если ответа на вопрос нет в документе, отвечай, что не можешь помочь с этим вопросом
+        """
 
         # релевантные отрезки из базы
-        # docs = self.db.similarity_search(query, k=4)
-        docs = self.db.similarity_search_with_score(query, k=7)
-        filtered_docs = [(doc, score) for doc, score in docs if score < 0.35]
-        scores = [str(score) for _, score in docs]
-        message_content = '\n'.join([f'{doc[0].page_content}' for doc in filtered_docs])
+        docs = self.db.similarity_search(query, k=4)
+        # docs = self.db.similarity_search_with_score(query, k=7)
+        # filtered_docs = [(doc, score) for doc, score in docs if score < 0.35]
+        # scores = [str(score) for _, score in docs]
+        # message_content = '\n'.join([f'{doc[0].page_content}' for doc in filtered_docs])
+        message_content = re.sub(r'\n{2}', ' ', '\n '.join([f'\nОтрывок документа №{i+1}\n=====================' + doc.page_content + '\n' for i, doc in enumerate(docs)]))
         
-        print(scores)
+        # print(scores)
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system),
@@ -90,6 +96,6 @@ class Chunk():
         chain = prompt | self.llm | output_parser 
 
         print(message_content)
-        answer = chain.invoke({"input": f"Ответь на вопрос клиента. Не упоминай документ с информацией для ответа клиенту в ответе. Документ с информацией для ответа клиенту: {message_content}\n\nВопрос клиента: \n{query}"})
+        answer = chain.invoke({"input": f"Ответь на вопрос сотрудника. Не упоминай документ с информацией для ответа сотруднику в ответе. Документ с информацией для ответа сотруднику: {message_content}\n\nВопрос сотрданика: \n{query}"})
         
         return answer
